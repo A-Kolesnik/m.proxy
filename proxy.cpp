@@ -48,9 +48,7 @@ bool secure_proxy::init_tools::LoadCAKeyData() {
 
 	share::RootCA* ca = share::RootCA::Get();
 
-	if (!ca->GetCertificate() or 
-		!ca->GetPrivateKey() or 
-		!ca->GetIssuerName()) {
+	if (!ca->GetCertificate() or !ca->GetPrivateKey() or !ca->GetIssuerName()) {
 		return false;
 	}
 

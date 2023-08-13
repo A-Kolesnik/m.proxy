@@ -8,9 +8,6 @@ share::ServerKeysMaker::ServerKeysMaker(int key_size) {
 
 
 EVP_PKEY* share::ServerKeysMaker::Get(int key_size) {
-	// Отложенная инициализация.
-	// Стандарт гарантирует автоматическое уничтожение
-	// объектов по окончании работы программы
 	static ServerKeysMaker maker{key_size};
 	return maker.pair_keys_;
 }
@@ -88,9 +85,6 @@ unsigned char* share::RootCA::GenerateSerialNumber() {
 	const auto kStatusSuccess{1};
 	auto status{ 1 };
 
-	// Если попытка выделения памяти неудачная,
-	// генерируется исключение
-
 	try {
 		serial_number = new unsigned char[config::kSerialNumberSize];
 	}
@@ -111,7 +105,6 @@ unsigned char* share::RootCA::GenerateSerialNumber() {
 
 bool share::RootCA::ReplaceCSRDomainName(X509_REQ* csr, const std::string& domain) {
 
-	// CN должен быть в CSR
 	X509_NAME* subject_name{ nullptr };
 	X509_NAME_ENTRY* delete_result{ nullptr };
 	auto entry_count{ 0 };
@@ -154,8 +147,7 @@ bool share::RootCA::SetExpirationDate(X509* certificate) {
 
 bool share::RootCA::SetSubjectAltName(X509* certificate, const std::string& domain) {
 
-	// Посмотреть случаи, когда расширение может быть не добавлено
-	GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null(); // <--- SubjectAltName
+	GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
 	GENERAL_NAME* ext_dns = GENERAL_NAME_new();
 	ASN1_IA5STRING* ia5 = ASN1_IA5STRING_new();
 	ASN1_STRING_set(ia5, domain.c_str(), domain.length());
@@ -188,36 +180,20 @@ share::ServerCSRTemplateMaker::ServerCSRTemplateMaker() {
 
 	if (!csr_) { return; }
 
-	// Установка версии CSR
 	if (!X509_REQ_set_version(csr_, X509_VERSION_3)) {
 		X509_REQ_free(csr_);
 		return;
 	}
-
-	// Установка полей SubjectName:
-	//	1. Country
-	//	2. State
-	//	3. City
-	//	4. Organization
-	// Доменное имя не устанавливается, т.к. для каждого нового сертификата
-	// соединения оно будет уникальным
 
 	if (!FillSubjectNameFields()) {
 		X509_REQ_free(csr_);
 		return;
 	}
 
-	// Установка публичного ключа
 	if (!SetPublicKey()) {
 		X509_REQ_free(csr_);
 		return;
 	}
-
-	// Т.к. в данном модуле:
-	// 1. Выполняется создание запроса к CA на выдачу сертификата (CSR)
-	// 2. Реализован CA
-	// Нет необходимости подписывать CSR приватным ключом сервера, т.к. проверку валидности подписи можно не выполнять.
-
 }
 
 bool share::ServerCSRTemplateMaker::FillSubjectNameFields() {
@@ -241,12 +217,10 @@ bool share::ServerCSRTemplateMaker::FillSubjectNameFields() {
 	return true;
 }
 
-bool share::ServerCSRTemplateMaker::AddTxtEntryToSubjectName(X509_NAME* subject_name, 
-															 const std::string& field_name, 
-															 const std::string& field_value) {
-	return X509_NAME_add_entry_by_txt(subject_name, field_name.c_str(), MBSTRING_ASC,
-									  (const unsigned char*)field_value.c_str(),
-									  -1, -1, 0);
+bool share::ServerCSRTemplateMaker::AddTxtEntryToSubjectName(X509_NAME* subject_name, const std::string& field_name, 
+	const std::string& field_value) {
+	return X509_NAME_add_entry_by_txt(subject_name, field_name.c_str(), MBSTRING_ASC, (const unsigned char*)field_value.c_str(), 
+		-1, -1, 0);
 }
 
 bool share::ServerCSRTemplateMaker::SetPublicKey() {
@@ -291,7 +265,10 @@ int share::server_tools::ProcessClientHello(SSL* ssl, int* al, void* arg) {
 	if (!CheckLenExtension(extension, &extension_len)) { return SSL_CLIENT_HELLO_ERROR; }
 	if (!CheckTypeExtensionSNI(extension)) { return SSL_CLIENT_HELLO_ERROR; }
 	
+	//
 	// !!! Обрати внимание на функцию. Лучшего способа закастить не нашел
+	//
+
 	if (sni = GetSNI(extension); sni.empty()) { return SSL_CLIENT_HELLO_CB; }
 
 	ca = share::RootCA::Get();
