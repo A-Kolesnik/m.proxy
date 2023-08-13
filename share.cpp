@@ -266,7 +266,7 @@ int share::server_tools::ProcessClientHello(SSL* ssl, int* al, void* arg) {
 	if (!CheckTypeExtensionSNI(extension)) { return SSL_CLIENT_HELLO_ERROR; }
 	
 	//
-	// !!! Обрати внимание на функцию. Лучшего способа закастить не нашел
+	// !!! РћР±СЂР°С‚Рё РІРЅРёРјР°РЅРёРµ РЅР° С„СѓРЅРєС†РёСЋ. Р›СѓС‡С€РµРіРѕ СЃРїРѕСЃРѕР±Р° Р·Р°РєР°СЃС‚РёС‚СЊ РЅРµ РЅР°С€РµР»
 	//
 
 	if (sni = GetSNI(extension); sni.empty()) { return SSL_CLIENT_HELLO_CB; }
