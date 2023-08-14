@@ -2,7 +2,7 @@
 
 bool secure_proxy::Server::Load() {
 	if (!CreateBIO()) { return false; }
-	if (!CreateSSL()) { return false; }
+	if (!CreateSSL()) { ResetBIO(); return false; }
 
 	return true;
 }
@@ -16,6 +16,7 @@ bool secure_proxy::Server::CreateSSL() {
 	SSL_set_accept_state(ssl_);
 	SSL_set_bio(ssl_, input_, output_);
 
+	return true;
 }
 
 bool secure_proxy::Server::CreateBIO() {
@@ -33,4 +34,19 @@ bool secure_proxy::Server::CreateBIO() {
 void secure_proxy::Server::ResetBIO() {
 	if (input_) { BIO_free(input_); }
 	if (output_) { BIO_free(output_); }
+}
+
+void secure_proxy::Server::ResetSSL() {
+	if (ssl_) { SSL_free(ssl_); }
+}
+
+secure_proxy::Server::~Server() {
+	//
+	// ResetSSL использует API openssl SSL_free, 
+	// который освобождает память, выделенную для SSL
+	// и вызывает free для всех связанных элементов. Например, BIO.
+	// Поэтому для освобождения памяти SSL и BIO достаточно выполнить
+	// освобождение памяти SSL
+	//	
+	ResetSSL();
 }

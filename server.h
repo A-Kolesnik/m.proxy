@@ -31,6 +31,7 @@ namespace secure_proxy {
 		Server& operator=(const Server&) = delete;
 		Server& operator=(const Server&&) = delete;
 
+		~Server();
 		// Создает сущности для организации и поддержания соединения:
 		// 1. Экземпляр SSL - описывает параметры соединения(версия протокола, криптографичекие наборы и т.д.)
 		// Параметры для создания извлекаются из контекста.
@@ -50,6 +51,8 @@ namespace secure_proxy {
 
 		// Удаляет память, выделенную для BIO
 		void ResetBIO();
+		void ResetSSL();
+
 		SSL* ssl_;
 
 		// Используется 2 объекта BIO, поскольку канал BIO является пайплайном.
