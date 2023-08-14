@@ -251,6 +251,21 @@ SSL_CTX* share::ServerCTXMaker::Get() {
 	return maker.ctx_;
 }
 
+share::ClientCTXMaker::ClientCTXMaker() {
+	ctx_ = SSL_CTX_new(TLS_client_method());
+
+	if (!ctx_) { return; }
+
+	SSL_CTX_set_options(ctx_, SSL_OP_ALL);
+
+	// Добавить пути к хранилищу сертификатов
+}
+
+SSL_CTX* share::ClientCTXMaker::Get() {
+	static ClientCTXMaker maker{};
+	return maker.ctx_;
+}
+
 int share::server_tools::ProcessClientHello(SSL* ssl, int* al, void* arg) {
 
 	share::RootCA* ca{ nullptr };

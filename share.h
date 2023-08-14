@@ -74,7 +74,7 @@ namespace share {
 		X509_REQ* csr_;
 	};
 
-	// Singleton-класс создает контекст, на базе которого будут созданы экземпл€ры SSL.
+	// Singleton-класс создает контекст сервера, на базе которого будут созданы экземпл€ры SSL.
 	// 
 	// API OpenSSL позвол€ет указывать сертификат, используемый сервером двум€ способами:
 	// 1. ¬ контексте перед созданием экземпл€ра сессии SSL
@@ -96,6 +96,25 @@ namespace share {
 		static SSL_CTX* Get();
 	protected:
 		ServerCTXMaker();
+	private:
+		SSL_CTX* ctx_;
+	};
+
+	// Singleton-класс создает контекст клиента, на базе которого будут созданы экземпл€ры SSL.
+	// 
+	// ¬ глобальной компьютерной сети Proxy выступает клиентом. ƒл€ всех соединений параметры будут неизмен€емые.
+	// »сключением €вл€етс€ расширение SNI сообщени€ ClientHello. ѕоэтому дл€ создани€ экземпл€ра
+	// класса SSL дл€ всех соединений будет использован один экземпл€р контекста с предустановленными
+	// параметрами. ј расширение SNI будет добавлено в каждый отдельный экземпл€р SSL.
+	// 
+	class ClientCTXMaker {
+	public:
+		ClientCTXMaker(const ClientCTXMaker&) = delete;
+		ClientCTXMaker& operator=(const ClientCTXMaker&) = delete;
+
+		static SSL_CTX* Get();
+	protected:
+		ClientCTXMaker();
 	private:
 		SSL_CTX* ctx_;
 	};
