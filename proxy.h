@@ -67,7 +67,7 @@ namespace secure_proxy {
 	// 
 	class Proxy {
 	public:
-		Proxy() {};
+		Proxy(){};
 		Proxy(const Proxy&) = delete;
 		Proxy(const Proxy&&) = delete;
 
@@ -76,9 +76,11 @@ namespace secure_proxy {
 
 		// Выполняет загрузку необходимых для поддержания соединения
 		// сущностей: client/server
+		// 
+		//
 		bool Load();
 
 		Server server_;
-		
+		Client client_;
 	};
 }

@@ -58,6 +58,7 @@ bool secure_proxy::init_tools::LoadCAKeyData() {
 bool secure_proxy::init_tools::LoadCtx() {
 
 	if (!share::ServerCTXMaker::Get()) { return false; }
+	if (!share::ClientCTXMaker::Get()) { return false; }
 
 	return true;
 }
@@ -86,4 +87,7 @@ void secure_proxy::reset_tools::ResetCTX() {
 
 bool secure_proxy::Proxy::Load() {
 	if (!server_.Load()) { return false; }
+	if (!client_.Load()) { return false; }
+
+	return true;
 }
