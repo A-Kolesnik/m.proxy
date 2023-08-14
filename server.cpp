@@ -19,14 +19,18 @@ bool secure_proxy::Server::CreateSSL() {
 }
 
 bool secure_proxy::Server::CreateBIO() {
-	if (input_ = BIO_new(BIO_s_mem()); !input_){return false; }
-	if (output_ = BIO_new(BIO_s_mem()); !output_) {
-		BIO_free(input_);
-		return false;
-	}
+	input_ = BIO_new(BIO_s_mem());
+	output_ = BIO_new(BIO_s_mem());
+	
+	if (!input_ or !output_) { ResetBIO(); return false;}
 
 	BIO_set_nbio_accept(input_, 1);
 	BIO_set_nbio_accept(output_, 1);
 
 	return true;
+}
+
+void secure_proxy::Server::ResetBIO() {
+	if (input_) { BIO_free(input_); }
+	if (output_) { BIO_free(output_); }
 }

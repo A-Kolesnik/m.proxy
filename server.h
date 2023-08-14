@@ -48,6 +48,8 @@ namespace secure_proxy {
 		//
 		bool CreateBIO();
 
+		// Удаляет память, выделенную для BIO
+		void ResetBIO();
 		SSL* ssl_;
 
 		// Используется 2 объекта BIO, поскольку канал BIO является пайплайном.
