@@ -6,7 +6,6 @@ share::ServerKeysMaker::ServerKeysMaker(int key_size) {
 	pair_keys_ = EVP_RSA_gen(key_size);
 }
 
-
 EVP_PKEY* share::ServerKeysMaker::Get(int key_size) {
 	static ServerKeysMaker maker{key_size};
 	return maker.pair_keys_;
@@ -243,7 +242,7 @@ share::ServerCTXMaker::ServerCTXMaker(): ctx_(nullptr) {
 	SSL_CTX_set_options(ctx_, SSL_OP_ALL);
 	
 	SSL_CTX_set_client_hello_cb(ctx_, server_tools::ProcessClientHello, nullptr);
-
+	SSL_CTX_set_verify(ctx_, SSL_VERIFY_NONE, nullptr);
 }
 
 SSL_CTX* share::ServerCTXMaker::Get() {
@@ -257,8 +256,9 @@ share::ClientCTXMaker::ClientCTXMaker() {
 	if (!ctx_) { return; }
 
 	SSL_CTX_set_options(ctx_, SSL_OP_ALL);
-
-	// Добавить пути к хранилищу сертификатов
+	SSL_CTX_set_verify(ctx_, SSL_VERIFY_PEER, nullptr);
+	SSL_CTX_load_verify_locations(ctx_, default_config::client::kCertificatesFile.c_str(), 
+		default_config::client::kCertificatesStorage.c_str());
 }
 
 SSL_CTX* share::ClientCTXMaker::Get() {
@@ -356,4 +356,102 @@ std::string share::server_tools::GetSNI(const unsigned char*& ext) {
 	sni = std::string(ext_value.get());
 
 	return sni;
+}
+
+bool share::Endpoint::Load() {
+	if (!CreateBIO()) { return false; }
+	if (!CreateSSL()) { ResetBIO(); return false; }
+
+	return true;
+}
+
+bool share::Endpoint::CreateBIO() {
+	input_ = BIO_new(BIO_s_mem());
+	output_ = BIO_new(BIO_s_mem());
+
+	if (!input_ or !output_) { ResetBIO(); return false; }
+
+	BIO_set_nbio_accept(input_, 1);
+	BIO_set_nbio_accept(output_, 1);
+
+	return true;
+}
+
+void share::Endpoint::ResetBIO() {
+	if (input_) { BIO_free(input_); }
+	if (output_) { BIO_free(output_); }
+}
+
+void share::Endpoint::ResetSSL() {
+	if (ssl_) { SSL_free(ssl_); }
+}
+
+bool share::Endpoint::IsHandshakeInit() {
+	return !SSL_in_before(ssl_);
+}
+
+void share::Endpoint::SetIsDataFlag(bool from_bio, bool value) {
+	if (from_bio) {
+		if (BIO_pending(output_) > 0) { has_data_ = true; }
+		else { has_data_ = false; }
+	}
+	else {
+		has_data_ = value;
+	}
+	
+	
+}
+
+bool share::Endpoint::SendToBIOChannel(unsigned char* data, int data_len) {
+	auto bytes_writed{ 0 };
+
+	bytes_writed = BIO_write(input_, data, data_len);
+	if (bytes_writed <= 0) { return false; }
+
+	return true;
+}
+
+share::ssl_status::code share::Endpoint::GetSSLStatus(int resolve_code) {
+	auto error_code{ 0 };
+	
+	
+	switch (error_code = SSL_get_error(ssl_, resolve_code); error_code) {
+	case SSL_ERROR_NONE:
+		return ssl_status::SSL_STATUS_OK;
+	case SSL_ERROR_WANT_READ:
+	case SSL_ERROR_WANT_WRITE:
+		return ssl_status::SSL_STATUS_WANT_IO;
+	default:
+		return ssl_status::SSL_STATUS_FAIL;
+	}
+}
+
+enum share::ssl_status::read share::Endpoint::ReadData(unsigned char* buf, int buf_size, int& readed) {
+
+	if (!buf) { return ssl_status::READ_STATUS_FAIL; }
+
+	readed = BIO_read(output_, buf, buf_size);
+
+	if (readed > 0) {
+		if (BIO_pending(output_) > 0) { return ssl_status::READ_STATUS_LEFT_DATA; }
+	}
+	else {
+		if (!BIO_should_retry(output_)) { return ssl_status::READ_STATUS_FAIL; }
+		else { return ssl_status::READ_STATUS_RETRY; }
+	}
+
+	has_data_ = false;
+	return ssl_status::READ_STATUS_SUCCESS;
+}
+
+bool share::Endpoint::IsTLSConnectionEstablished() {
+	return(SSL_is_init_finished(ssl_));
+}
+
+bool share::Endpoint::HasReadData() {
+	return has_data_;
+}
+
+share::Endpoint::~Endpoint() {
+	ResetSSL();
 }

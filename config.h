@@ -30,4 +30,9 @@ namespace default_config {
 		const std::string kCityValue{"Moscow" };
 		const std::string kOrganizationValue{ "Team" };
 	}
+
+	namespace client {
+		const std::string kCertificatesStorage{"/etc/ssl/certs"};
+		const std::string kCertificatesFile{"/etc/ssl/certs/ca-certificates.crt"};
+	}
 }
