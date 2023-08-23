@@ -240,7 +240,7 @@ share::ServerCTXMaker::ServerCTXMaker(): ctx_(nullptr) {
 	if (!ctx_) { return; }
 
 	SSL_CTX_set_options(ctx_, SSL_OP_ALL);
-	
+
 	SSL_CTX_set_client_hello_cb(ctx_, server_tools::ProcessClientHello, nullptr);
 	SSL_CTX_set_verify(ctx_, SSL_VERIFY_NONE, nullptr);
 }
@@ -257,8 +257,7 @@ share::ClientCTXMaker::ClientCTXMaker() {
 
 	SSL_CTX_set_options(ctx_, SSL_OP_ALL);
 	SSL_CTX_set_verify(ctx_, SSL_VERIFY_PEER, nullptr);
-	SSL_CTX_load_verify_locations(ctx_, default_config::client::kCertificatesFile.c_str(), 
-		default_config::client::kCertificatesStorage.c_str());
+	SSL_CTX_load_verify_locations(ctx_, default_config::client::kCertificatesFile.c_str(), default_config::client::kCertificatesStorage.c_str());
 }
 
 SSL_CTX* share::ClientCTXMaker::Get() {
@@ -279,10 +278,6 @@ int share::server_tools::ProcessClientHello(SSL* ssl, int* al, void* arg) {
 	if (!IsExistsSNI(ssl, &extension, &extension_len)) { return SSL_CLIENT_HELLO_ERROR; }
 	if (!CheckLenExtension(extension, &extension_len)) { return SSL_CLIENT_HELLO_ERROR; }
 	if (!CheckTypeExtensionSNI(extension)) { return SSL_CLIENT_HELLO_ERROR; }
-	
-	//
-	// !!! Обрати внимание на функцию. Лучшего способа закастить не нашел
-	//
 
 	if (sni = GetSNI(extension); sni.empty()) { return SSL_CLIENT_HELLO_CB; }
 
@@ -413,8 +408,7 @@ bool share::Endpoint::SendToBIOChannel(unsigned char* data, int data_len) {
 
 share::ssl_status::code share::Endpoint::GetSSLStatus(int resolve_code) {
 	auto error_code{ 0 };
-	
-	
+
 	switch (error_code = SSL_get_error(ssl_, resolve_code); error_code) {
 	case SSL_ERROR_NONE:
 		return ssl_status::SSL_STATUS_OK;
@@ -439,8 +433,8 @@ enum share::ssl_status::read share::Endpoint::ReadData(unsigned char* buf, int b
 		if (!BIO_should_retry(output_)) { return ssl_status::READ_STATUS_FAIL; }
 		else { return ssl_status::READ_STATUS_RETRY; }
 	}
-
-	has_data_ = false;
+	
+	SetIsDataFlag(false, false);
 	return ssl_status::READ_STATUS_SUCCESS;
 }
 

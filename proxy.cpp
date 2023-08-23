@@ -85,6 +85,11 @@ void secure_proxy::reset_tools::ResetCTX() {
 	SSL_CTX_free(ctx);
 }
 
+/*!
+* @details
+* Под сервером и клиентом понимаются части данного класса:  
+* серверная в локальной сети и клиентская во внешней сети.
+*/
 bool secure_proxy::Proxy::Load() {
 	if (!server_.Load()) { return false; }
 	if (!client_.Load()) { return false; }
@@ -92,6 +97,16 @@ bool secure_proxy::Proxy::Load() {
 	return true;
 }
 
+/*!
+* Обработка включает следующие операции:
+*  * Добавление сообщения во входной BIO.
+*  * Выполнение операции установления соединения с Proxy сервером(
+*    если не установлено).
+*  * Расшифровка сообщения и трансляция его на PIN.
+*  * Шифрование сообщение Proxy клиентом.
+* Если один из шагов завершится с критической ошибкой, метод вернет false, что
+* должно привести к разрыву соединения.
+*/
 bool secure_proxy::Proxy::ProcessLANClientMessage(unsigned char* message, int message_len) {
 
 	if (!server_.SendToBIOChannel(message, message_len)) { return false; }
@@ -100,12 +115,23 @@ bool secure_proxy::Proxy::ProcessLANClientMessage(unsigned char* message, int me
 		if (!EstablishLANConnection()) { return false; }
 	}
 	else {
-		if (!ProcessApplicationData(message, message_len, true)) { return false; };
+		if (!ProcessApplicationData(true)) { return false; };
 	}
 
 	return true;
 }
 
+/*!
+* @details
+* Обработка включает следующие операции:
+*  * Добавление сообщения во входной BIO.
+*  * Выполнение операции установления соединения с Proxy клиентом(
+*    если не установлено).
+*  * Расшифровка сообщения и трансляция его на PIN.
+*  * Шифрование сообщение Proxy сервером.
+* Если один из шагов завершится с критической ошибкой, метод вернет false, что
+* должно привести к разрыву соединения.
+*/
 bool secure_proxy::Proxy::ProcessWANServerMessage(unsigned char* message, int message_len) {
 	
 	if (!client_.SendToBIOChannel(message, message_len)) { return false; }
@@ -114,22 +140,36 @@ bool secure_proxy::Proxy::ProcessWANServerMessage(unsigned char* message, int me
 		if (!EstablishWANConnection()) { return false; }
 	}
 	else {
-		if (!ProcessApplicationData(message, message_len, false)) { return false; }
+		if (!ProcessApplicationData(false)) { return false; }
 	}
-	
 
 	return true;
 }
 
+/*!
+* @details
+* т.к. объекты BIO, связанные с SSL, работают в неблокирующем режиме,
+* установление соединения происходит не сразу. После каждого успешного
+* шага соединения, результат помещается в выходной BIO. Для передачи данных
+* между клиентом локальной сети и сервером во внешней сети, необходимо
+* установить соединения клиента LAN с сервером Proxy и клиента Proxy
+* с сервером WAN. В данной реализации, установление соединения клиента Proxy 
+* с внешним сервером будет инициировано после обработки клиентом LAN ответа от
+* Proxy сервера на сообщение ClientHello. После установления соединения Proxy клиента с 
+* WAN сервером, будет продолжено установление соединения Proxy сервера с LAN клиентом.
+* Причем, установление соединения для различных версий протокола будет отличаться. В частности,
+* изменения в установлении соединения были внесены в версию протокола 1.3. Одно из изменений, которое
+* можно заметить в реализации - это передача сообщения Finished. В версии TLS 1.3 данное сообщение
+* передается с первым зашифрованным сообщением. В предыдущих версиях протокола, соединение считалось
+* неустановленным, пока узлы не обменялись сообщением Finished. Т.е. данные и Finished передавались 
+* отдельно друг от друга. 
+*/
 bool secure_proxy::Proxy::EstablishLANConnection() {
 	
 	if (!server_.IsHandshakeInit()) {
 		if (!PerformLANHandshake()) { return false; }
+		if (!ConfigureClientProxyGivenSNI()) { return false; }
 
-		/*
-		* Если не будет SNI, шаг рукопожатия не будет выполнен
-		*/
-		if (!SetServerName()) { return false; }
 	}
 	else {
 		if (!client_.IsTLSConnectionEstablished()) {
@@ -143,15 +183,15 @@ bool secure_proxy::Proxy::EstablishLANConnection() {
 	return true;
 }
 
+/*!
+* @details
+*/
 bool secure_proxy::Proxy::EstablishWANConnection() {
 	
 	if (!PerformWANHandshake()) { return false; }
 
 	if (client_.IsTLSConnectionEstablished() ) {
-		/*
-		* Реализовано для совместимости всех версий протокола.
-		* 
-		*/
+
 		client_.SetIsDataFlag(false, false);
 		if (!PerformLANHandshake()) { return false; }
 	}
@@ -159,6 +199,11 @@ bool secure_proxy::Proxy::EstablishWANConnection() {
 	return true;
 }
 
+/*!
+* @details
+* Если операция Handshake выполнена успешно, выполняется проверка
+* наличия данных для чтения в выходном BIO.
+*/
 bool secure_proxy::Proxy::PerformLANHandshake() {
 	if (!server_.PerformHandshake()) { return false; }
 	server_.SetIsDataFlag();
@@ -166,6 +211,11 @@ bool secure_proxy::Proxy::PerformLANHandshake() {
 	return true;
 }
 
+/*!
+* @details
+* Если операция Handshake выполнена успешно, выполняется проверка
+* наличия данных для чтения в выходном BIO.
+*/
 bool secure_proxy::Proxy::PerformWANHandshake() {
 	if (!client_.PerformHandshake()) { return false; }
 	client_.SetIsDataFlag();
@@ -173,7 +223,20 @@ bool secure_proxy::Proxy::PerformWANHandshake() {
 	return true;
 }
 
-bool secure_proxy::Proxy::ProcessApplicationData(unsigned char* message, int message_len, bool is_server) {
+/*!
+* @details
+* Выполняет шифрование/расшифрование данных, обмен полученными данными
+* между клиентской и серверной частью Proxy. Последовательность операций:
+*  * Полученные данные расшировываются.
+*  * Открытые данные транслируются на PIN.
+*  * Выполняется шифрование на противоположной стороне Proxy. Результат шифрования будет расположен в выходном BIO.
+*  Перед вызовом метода, сообщение помещается во входной BIO, который является  источником данных для расшифровывания.
+*  Особенностью работы является возможность отправки одной из сторон после установления соединения системных сообщений. 
+*  Подобное событие будет обработано корректно, а именно системное сообщение будет обработано соответствующей стороной, и 
+*  результат будет записан в выходной BIO. Если отправленное сообщение будет означать разрыв соединения или одна из сторон 
+*  не сможет корректно его обработать, метод вернет false, что будет означать разрыв соединения.
+*/
+bool secure_proxy::Proxy::ProcessApplicationData(bool is_server) {
 	share:: Endpoint* role{ nullptr };
 	unsigned char* decrypted_data{nullptr};
 	int decrypted_data_size{ 0 };
@@ -189,10 +252,9 @@ bool secure_proxy::Proxy::ProcessApplicationData(unsigned char* message, int mes
 		return true; 
 	}
 
-	// Отправляем на PIN
-	// Future Coding
-	//
-	// Шифрование данных на противоположной стороне для отправки
+	/*
+	* Отправить на PIN
+	*/
 
 	if (is_server) { 
 		if (!EncryptData(&client_, decrypted_data, decrypted_data_size)) { return false; }
@@ -201,17 +263,28 @@ bool secure_proxy::Proxy::ProcessApplicationData(unsigned char* message, int mes
 		if (!EncryptData(&server_, decrypted_data, decrypted_data_size)) { return false; }
 	}
 
+	if (decrypted_data) { tools::ClearMemory(decrypted_data, true); }
+
 	return true;
 }
 
+/*!
+* @details
+* Расшифрование происходит с использование API OpenSSL [SSL_read](https://www.openssl.org/docs/man3.0/man3/SSL_read.html).
+* Шифрованные данные извлекаются из входного BIO. Если для расшифрования недостаточно данных,
+* ядро OpenSSL считает данные из BIO, закэширует их и будет ждать следующую порцию данных.
+* В этом случае, метод вернет true, но данных для чтения в BIO не будет. Когда данных будет достаточно,
+* они будут расшифрованы
+*/
 bool secure_proxy::Proxy::DecryptData(share::Endpoint* role, unsigned char*& buf, int& decrypted) {
-	auto readed{ 0 };
-	auto read_status_code_resolve{share::ssl_status::SSL_STATUS_OK};
-	auto ssl_pending{ 0 };
-	auto default_size{ 65536 };
-	auto read_chunk_size{ default_size };
 	auto bytes_left_to_read{ 0 };
-
+	auto default_size{ 65536 };
+	auto read_status_code_resolve{ share::ssl_status::SSL_STATUS_OK };
+	auto read_chunk_size{ default_size };
+	auto return_code{ true };
+	auto readed{ 0 };
+	auto ssl_pending{ 0 };
+	
 	if (!tools::AllocateMemory(buf, default_size)) { return false; }
 
 	while (true) {
@@ -222,17 +295,27 @@ bool secure_proxy::Proxy::DecryptData(share::Endpoint* role, unsigned char*& buf
 		bytes_left_to_read = SSL_pending(role->ssl_);
 
 		if ( bytes_left_to_read > 0) {
-			if (!tools::ExpandBuffer(buf, default_size + bytes_left_to_read)) { return false; }
+			if (!tools::ExpandBuffer(buf, default_size + bytes_left_to_read)) { return_code = false; break; }
 			read_chunk_size = bytes_left_to_read;
 		}
 	}
 
-	read_status_code_resolve = role->GetSSLStatus(readed);
-	if (read_status_code_resolve == share::ssl_status::SSL_STATUS_FAIL) { return false; }
+	if (!return_code) {
+		if (buf) { tools::AllocateMemory(buf, true); }
+	}
+	else {
+		read_status_code_resolve = role->GetSSLStatus(readed);
+		if (read_status_code_resolve == share::ssl_status::SSL_STATUS_FAIL) { return_code = false; }
+	}
 
-	return true;
+	return return_code;
 }
 
+/*!
+* @details
+* Шифрование выполняется с использование API OpenSSL [SSL_write](https://www.openssl.org/docs/man3.0/man3/SSL_write.html),
+* после чего данные записываются в выходной BIO.
+*/
 bool secure_proxy::Proxy::EncryptData(share::Endpoint* role, unsigned char* data, int data_len) {
 	int write_status{ 0 };
 	int write_status_resolve{ 0 };
@@ -242,18 +325,63 @@ bool secure_proxy::Proxy::EncryptData(share::Endpoint* role, unsigned char* data
 	
 	role->SetIsDataFlag();
 
-	if (data) { tools::ClearMemory(data, true); }
 	if (write_status_resolve == share::ssl_status::SSL_STATUS_FAIL) { return false; }
 
 	return true;
 }
+
+/*!
+* @details
+* Сброс состояния BIO. Выполняется с использованием API OpenSSL 
+* [BIO_reset](https://www.openssl.org/docs/man3.0/man3/BIO_reset.html).
+*/
 void secure_proxy::Proxy::ResetBIOBuffer(BIO* bio) {
 	BIO_reset(bio);
 }
 
-bool secure_proxy::Proxy::SetServerName() {
+/*!
+* @details
+* Конфигурирование включает установку расширения SNI и ожидаемого имени сервера.
+* Имя сервера извлекается из серверной части Proxy с использованием API OpenSSL
+* [SSL_get_servername](https://www.openssl.org/docs/man3.0/man3/SSL_get_servername.html).
+*/
+bool secure_proxy::Proxy::ConfigureClientProxyGivenSNI() {
 	std::string host_name{};
 
 	host_name = SSL_get_servername(server_.ssl_, TLSEXT_NAMETYPE_host_name);
-	return SSL_set_tlsext_host_name(client_.ssl_, host_name.c_str());
+
+	if (!SetSNI(host_name)) { return false; }
+	if (!SetExpectedHostName(host_name)) { return false; }
+
+	return true;
+}
+
+/*!
+* @details
+* Расширение SNI необходимо при формировании клиентом сообщения ClientHello.
+* Используя данное расширение, сервер определяет какой сертификат использовать
+* для ответа клиенту. Добавление SNI выполняется с использованием API OpenSSL
+* [SSL_set_tlsext_host_name](https://www.openssl.org/docs/man3.0/man3/SSL_set_tlsext_host_name.html).
+*/
+bool secure_proxy::Proxy::SetSNI(std::string sni) {
+	return SSL_set_tlsext_host_name(client_.ssl_, sni.c_str());
+}
+
+/*!
+* @details
+* В процесс валидации сертификата возможно включить дополнительну операцию - 
+* проверку имени сервера. В этом случае, имя сервера извлекается из сертификата
+* и соотносится с ожидаемым именем сервера, установленном на клиенте. Установка
+* ожидаемого имени сервера и конфигурация процесса валидации выполняется с использованием
+* API OpenSSL:
+*   * [SSL_set_hostflags](https://www.openssl.org/docs/man3.0/man3/SSL_set1_host.html): 
+*     устанавливает флаги проверки. В текущей реализации установлен флаг
+*     [X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS](https://www.openssl.org/docs/man3.0/man3/X509_check_host.html).
+*   * [SSL_set1_host](https://www.openssl.org/docs/man3.0/man3/SSL_set1_host.html):
+*     устанавливает ожидаемое имя сервера.
+*/
+bool secure_proxy::Proxy::SetExpectedHostName(std::string host_name) {
+	SSL_set_hostflags(client_.ssl_, X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS);
+
+	return SSL_set1_host(client_.ssl_, host_name.c_str());
 }

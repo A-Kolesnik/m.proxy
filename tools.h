@@ -8,10 +8,13 @@
 namespace fs = std::filesystem;
 
 namespace tools {
-	// Выполняет закрытие потока.
-	// Реализовано в отдельном классе с целью использования 
-	// механизма умных указателей для работы с файлами
-	//
+
+	/*!
+	* @brief Закрывает поток
+	* 
+	* Реализация в отдельном классе выполнена с целью
+	* использования smart pointers для работы с файлами
+	*/
 	class FileCloser {
 	public:
 		void operator()(FILE* fd) const { fclose(fd); }
@@ -19,6 +22,14 @@ namespace tools {
 
 	std::unique_ptr<FILE, FileCloser> OpenFile(const fs::path&, std::string);
 
+	/*!
+	* @brief Увеличивает размер участка памяти
+	* 
+	* @param[in,out] buf          Указатель на начало участка памяти, который необходимо расширить
+	* @param[in]     update_size  Размер участка памяти, до которого необходимо расширить 
+	* 
+	* @return true/false Операция выполнена успешно, безуспешно соответственно
+	*/
 	template<typename T>
 	bool ExpandBuffer(T*& buf, int update_size) {
 		buf = (T*)std::realloc(buf, update_size);
