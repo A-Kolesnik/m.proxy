@@ -26,7 +26,6 @@ share::RootCA::RootCA() : certificate_(nullptr), issuer_name_(nullptr), private_
 		EVP_PKEY_free(private_key_);
 		return; 
 	}
-
 }
 
 template<typename T>
@@ -251,13 +250,19 @@ SSL_CTX* share::ServerCTXMaker::Get() {
 }
 
 share::ClientCTXMaker::ClientCTXMaker() {
-	ctx_ = SSL_CTX_new(TLS_client_method());
+	auto status_load_locations{ 0 };
 
+	ctx_ = SSL_CTX_new(TLS_client_method());
 	if (!ctx_) { return; }
 
 	SSL_CTX_set_options(ctx_, SSL_OP_ALL);
 	SSL_CTX_set_verify(ctx_, SSL_VERIFY_PEER, nullptr);
-	SSL_CTX_load_verify_locations(ctx_, default_config::client::kCertificatesFile.c_str(), default_config::client::kCertificatesStorage.c_str());
+	status_load_locations = SSL_CTX_load_verify_locations(ctx_, default_config::client::kCertificatesFile.c_str(), 
+		                                                  default_config::client::kCertificatesStorage.c_str());
+	if (!status_load_locations) {
+		SSL_CTX_free(ctx_);
+		ctx_ = nullptr;
+	}
 }
 
 SSL_CTX* share::ClientCTXMaker::Get() {
@@ -283,6 +288,7 @@ int share::server_tools::ProcessClientHello(SSL* ssl, int* al, void* arg) {
 
 	ca = share::RootCA::Get();
 	certificate = ca->IssueCertificate(sni);
+
 	pair_keys = share::ServerKeysMaker::Get(default_config::server::kKeySize);
 
 	SSL_use_certificate(ssl, certificate);

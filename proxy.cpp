@@ -2,22 +2,16 @@
 #include "share.h"
 
 bool secure_proxy::Init() {
-
-	if (!init_tools::GenerateServerKeys()) { return false; }
-	if (!init_tools::GenerateCSRTemplate()) { 
-		reset_tools::ResetServerKeys(); 
-		return false; 
-	}
-	if (!init_tools::LoadCAKeyData()) { 
-		reset_tools::ResetServerKeys();
-		reset_tools::ResetCSR();
-		return false; 
-	}
-	if (!init_tools::LoadCtx()) {
+	
+	if (!init_tools::GenerateServerKeys() or
+		!init_tools::GenerateCSRTemplate() or
+		!init_tools::LoadCAKeyData() or
+		!init_tools::LoadCtx()
+		) {
 		Reset();
 		return false;
 	}
-
+	
 	return true;
 }
 
@@ -27,9 +21,13 @@ void secure_proxy::Reset() {
 	reset_tools::ResetCA();
 	reset_tools::ResetCSR();
 	reset_tools::ResetCTX();
-
 }
 
+/*
+* @details
+* Создание ключей выполняется с использованием статического метода класса  
+* ServerKeysMaker Get().
+*/
 bool secure_proxy::init_tools::GenerateServerKeys() {
 
 	namespace config = default_config::server;
@@ -38,12 +36,26 @@ bool secure_proxy::init_tools::GenerateServerKeys() {
 	return true;
 }
 
+/*!
+* @details
+* Создание шаблона запроса выполняется с использованием статического метода  
+* класса ServerCSRTemplateMaker Get().
+*/
 bool secure_proxy::init_tools::GenerateCSRTemplate() {
 	if (!share::ServerCSRTemplateMaker::Get()) { return false; }
 
 	return true;
 }
 
+/*!
+* @details
+* * Загружает самоподписанный сертификат
+* * Загружает приватный ключ
+* * Извлекает из сертификата IssuerName
+* Сертификат и приватный ключ должны быть сгенерированы заранее и  
+* предоставлены в виде файлов в PEM-формате. Пути к файлам указываются  
+* в config.h.
+*/
 bool secure_proxy::init_tools::LoadCAKeyData() {
 
 	share::RootCA* ca = share::RootCA::Get();
@@ -55,19 +67,35 @@ bool secure_proxy::init_tools::LoadCAKeyData() {
 	return true;
 }
 
+/*!
+* @details
+* Создание контекстов выполняется с использованием статисеского метода Get():  
+* * класса ServerCTXMaker для сервера
+* * класса ClientCTXMaker для клиента
+*/
 bool secure_proxy::init_tools::LoadCtx() {
-
 	if (!share::ServerCTXMaker::Get()) { return false; }
 	if (!share::ClientCTXMaker::Get()) { return false; }
 
 	return true;
 }
 
+/*!
+* @details
+* Освобождение памяти выполняется с использованием API OpenSSL  
+* [EVP_PKEY_free](https://www.openssl.org/docs/man3.0/man3/EVP_PKEY_free.html)
+*/
 void secure_proxy::reset_tools::ResetServerKeys() {
 	EVP_PKEY* keys = share::ServerKeysMaker::Get(default_config::server::kKeySize);
 	EVP_PKEY_free(keys);
 }
 
+/*
+* @details
+* Освобождение памяти выполняется с использованием API OpenSSL:  
+* * [X509_free](https://www.openssl.org/docs/man3.0/man3/X509_free.html) для сертификата.
+* * [EVP_PKEY_free](https://www.openssl.org/docs/man3.0/man3/EVP_PKEY_free.html) для ключа.
+*/
 void secure_proxy::reset_tools::ResetCA() {
 	share::RootCA* ca = share::RootCA::Get();
 
@@ -75,14 +103,27 @@ void secure_proxy::reset_tools::ResetCA() {
 	EVP_PKEY_free(ca->GetPrivateKey());
 }
 
+/*
+* @details
+* Освобождение памяти выполняется с использованием API OpenSSL  
+* [X509_REQ_free](https://www.openssl.org/docs/man3.0/man3/X509_REQ_free.html)
+*/
 void secure_proxy::reset_tools::ResetCSR() {
 	X509_REQ* csr = share::ServerCSRTemplateMaker::Get();
 	X509_REQ_free(csr);
 }
 
+/*
+* @details
+* Освобождение памяти выполняется с использованием API OpenSSL
+* [SSL_CTX_free](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_free.html)
+*/
 void secure_proxy::reset_tools::ResetCTX() {
-	SSL_CTX* ctx = share::ServerCTXMaker::Get();
-	SSL_CTX_free(ctx);
+	SSL_CTX* ctx_server = share::ServerCTXMaker::Get();
+	SSL_CTX* ctx_client = share::ClientCTXMaker::Get();
+
+	SSL_CTX_free(ctx_client);
+	SSL_CTX_free(ctx_server);
 }
 
 /*!
@@ -115,7 +156,7 @@ bool secure_proxy::Proxy::ProcessLANClientMessage(unsigned char* message, int me
 		if (!EstablishLANConnection()) { return false; }
 	}
 	else {
-		if (!ProcessApplicationData(true)) { return false; };
+		if (!ProcessApplicationData(true)) { return false; }
 	}
 
 	return true;
@@ -169,7 +210,6 @@ bool secure_proxy::Proxy::EstablishLANConnection() {
 	if (!server_.IsHandshakeInit()) {
 		if (!PerformLANHandshake()) { return false; }
 		if (!ConfigureClientProxyGivenSNI()) { return false; }
-
 	}
 	else {
 		if (!client_.IsTLSConnectionEstablished()) {
@@ -245,7 +285,7 @@ bool secure_proxy::Proxy::ProcessApplicationData(bool is_server) {
 	else { role = &client_; }
 
 	if (!DecryptData(role, decrypted_data, decrypted_data_size)) { return false; }
-	
+
 	if (decrypted_data_size == 0) {
 		if (decrypted_data) { tools::ClearMemory(decrypted_data, true); }
 		role->SetIsDataFlag();
@@ -256,10 +296,10 @@ bool secure_proxy::Proxy::ProcessApplicationData(bool is_server) {
 	* Отправить на PIN
 	*/
 
-	if (is_server) { 
+	if (is_server) {
 		if (!EncryptData(&client_, decrypted_data, decrypted_data_size)) { return false; }
 	}
-	else { 
+	else {
 		if (!EncryptData(&server_, decrypted_data, decrypted_data_size)) { return false; }
 	}
 
