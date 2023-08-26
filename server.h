@@ -29,7 +29,6 @@ namespace secure_proxy {
 		Server& operator=(const Server&&) = delete;
 
 		bool PerformHandshake() override;
-		// При удалении объекта будет вызван деструктор базового класса
 
 	private:
 		bool CreateSSL() override;
