@@ -1,6 +1,7 @@
-// Описывает пространство имен (в том числе вложенные), содержащее переменные
-// для конфигурирования отдельных сущностей. Например, пути к файлам сертификата и приватного ключа
-// корневого центра сертификации
+/*!
+* @file
+* @brief Описывает конфигурацию TLS-части программного модуля.
+*/
 
 #pragma once
 
@@ -9,11 +10,17 @@
 namespace fs = std::filesystem;
 
 namespace default_config {
+	/*!
+	* @brief Описывает конфигурация CA.
+	*/
 	namespace ca {
 		const fs::path kPathCert{"/home/user/mitm.proxy/MitmProxy/ca/ca2.cer"};
 		const fs::path kPathPrivateKey{"/home/user/mitm.proxy/MitmProxy/ca/ca2.key"};
 	}
 
+	/*!
+	* @brief Описывает конфигурация серверной части Proxy.
+	*/
 	namespace server {
 		const auto kKeySize{ 2048 };
 		const auto kValidYears{ 1 };
@@ -31,6 +38,9 @@ namespace default_config {
 		const std::string kOrganizationValue{ "Team" };
 	}
 
+	/*!
+	* @brief Описывает конфигурация клиентской части Proxy.
+	*/
 	namespace client {
 		const std::string kCertificatesStorage{"/etc/ssl/certs"};
 		const std::string kCertificatesFile{"/etc/ssl/certs/ca-certificates.crt"};

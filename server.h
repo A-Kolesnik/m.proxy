@@ -1,8 +1,7 @@
-// Описывает сущность Server. Имеется ввиду, роль Proxy в качестве сервера,
-// т.е. поведение Proxy в локальной сети. Связь Server и Proxy -> Экземпляр
-// Server - свойство экземпляра Proxy
-// 
-//
+/*!
+* @file
+* @brief Описывает класс Server
+*/
 
 #pragma once
 
@@ -17,9 +16,11 @@
 
 namespace secure_proxy {
 
+	/*!
+	* @brief Описывает интерфейс для работы серверной части Proxy.
+	*/
 	class Server : public share::Endpoint {
 	public:
-		// Подключение конструктора базового класса
 		using Endpoint::Endpoint;
 
 		Server(const Server&) = delete;
@@ -28,9 +29,21 @@ namespace secure_proxy {
 		Server& operator=(const Server&) = delete;
 		Server& operator=(const Server&&) = delete;
 
+		/*!
+		* @brief Выполняет очередной шаг процедуры установления соединения.
+		*
+		* @retval true  Операция выполнена успешно.
+		* @retval false Произошла критическая ошибка.
+		*/
 		bool PerformHandshake() override;
 
 	private:
+		/*!
+		* @brief Создает экземпляр SSL и выполняет его конфигурацию
+		*
+		* @retval true  Экземпляр создан и сконфигурирован успешно.
+		* @retval false Произошла критическая ошибка при создании или конфигурации экземпляра SSL.
+		*/
 		bool CreateSSL() override;
 	};
 }

@@ -1,6 +1,9 @@
 #include "server.h"
 
-
+/*!
+* @details
+* ƒл€ выполнени€ одной из операций установлени€ соединени€ используетс€ API OpenSSL [SSL_accept](https://www.openssl.org/docs/man3.0/man3/SSL_accept.html).
+*/
 bool secure_proxy::Server::PerformHandshake() {
 	auto handshake_code{ 0 };
 	auto handshake_code_resolve{ share::ssl_status::SSL_STATUS_OK };
@@ -13,6 +16,14 @@ bool secure_proxy::Server::PerformHandshake() {
 	return true;
 }
 
+/*!
+* @details
+*  онфигураци€ состоит из установки работы SSL в режиме сервера и св€зывание SSL с BIO.
+* »спользуемый API OpenSSL:
+* * [SSL_new](https://www.openssl.org/docs/man3.0/man3/SSL_new.html) создает SSL.
+* * [SSL_set_accept_state](https://www.openssl.org/docs/man3.0/man3/SSL_set_accept_state.html) устанавливает режим работы.
+* * [SSL_set_bio](https://www.openssl.org/docs/man3.0/man3/SSL_set_bio.html) св€зывает входной и выходной BIO с SSL.
+*/
 bool secure_proxy::Server::CreateSSL() {
 	SSL_CTX* ctx = share::ServerCTXMaker::Get();
 
