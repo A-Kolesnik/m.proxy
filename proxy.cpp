@@ -177,7 +177,7 @@ bool secure_proxy::Proxy::ProcessLANClientMessage(unsigned char* message, int me
 		if (!EstablishLANConnection()) { return false; }
 	}
 	else {
-		if (!ProcessApplicationData(true)) { return false; }
+		if (!ProcessData(true)) { return false; }
 	}
 
 	return true;
@@ -202,7 +202,7 @@ bool secure_proxy::Proxy::ProcessWANServerMessage(unsigned char* message, int me
 		if (!EstablishWANConnection()) { return false; }
 	}
 	else {
-		if (!ProcessApplicationData(false)) { return false; }
+		if (!ProcessData(false)) { return false; }
 	}
 
 	return true;
@@ -229,15 +229,15 @@ bool secure_proxy::Proxy::ProcessWANServerMessage(unsigned char* message, int me
 bool secure_proxy::Proxy::EstablishLANConnection() {
 	
 	if (!server_.IsHandshakeInit()) {
-		if (!PerformLANHandshake()) { return false; }
+		if (!ProcessData(true)) { return false; }
 		if (!ConfigureClientProxyGivenSNI()) { return false; }
 	}
 	else {
 		if (!client_.IsTLSConnectionEstablished()) {
-			if (!PerformWANHandshake()) { return false; }
+			if (!ProcessData(false)) { return false; }
 		}
 		else {
-			if (!PerformLANHandshake()) { return false; }
+			if (!ProcessData(true)) { return false; }
 		}
 	}
 
@@ -249,12 +249,13 @@ bool secure_proxy::Proxy::EstablishLANConnection() {
 */
 bool secure_proxy::Proxy::EstablishWANConnection() {
 	
-	if (!PerformWANHandshake()) { return false; }
-
+	if (!ProcessData(false)) { return false; }
+	
 	if (client_.IsTLSConnectionEstablished() ) {
 
 		client_.SetIsDataFlag(false, false);
-		if (!PerformLANHandshake()) { return false; }
+		//if (!PerformLANHandshake()) { return false; }
+		if (!ProcessData(true)) { return false; }
 	}
 
 	return true;
@@ -297,7 +298,7 @@ bool secure_proxy::Proxy::PerformWANHandshake() {
 *  результат будет записан в выходной BIO. Если отправленное сообщение будет означать разрыв соединения или одна из сторон 
 *  не сможет корректно его обработать, метод вернет false, что будет означать разрыв соединения.
 */
-bool secure_proxy::Proxy::ProcessApplicationData(bool is_server) {
+bool secure_proxy::Proxy::ProcessData(bool is_server) {
 	share:: Endpoint* role{ nullptr };
 	unsigned char* decrypted_data{nullptr};
 	int decrypted_data_size{ 0 };

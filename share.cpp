@@ -342,6 +342,9 @@ share::ServerCTXMaker::ServerCTXMaker(): ctx_(nullptr) {
 
 	SSL_CTX_set_options(ctx_, SSL_OP_ALL);
 
+	//
+	SSL_CTX_set_max_proto_version(ctx_, TLS1_2_VERSION);
+
 	SSL_CTX_set_client_hello_cb(ctx_, server_tools::ProcessClientHello, nullptr);
 	SSL_CTX_set_verify(ctx_, SSL_VERIFY_NONE, nullptr);
 }

@@ -211,14 +211,14 @@ namespace secure_proxy {
 		bool ConfigureClientProxyGivenSNI();
 
 		/*!
-		* @brief Обрабатывает данные приложения.
+		* @brief Обрабатывает данные приложения и сообщения протокола.
 		* 
 		* @param[in] is_server   Маркер роли, в которой выступает Proxy(клиент/сервер)
 		* 
 		* @retval true  Обработка сообщения выполнена успешно
 		* @retval false Требуется разрыв соединения из-за критической ошибки, либо по запросу одной из сторон.
 		*/
-		bool ProcessApplicationData(bool);
+		bool ProcessData(bool);
 		
 		/*!
 		* @brief Расшифровывает сообщение.
