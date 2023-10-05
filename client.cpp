@@ -3,7 +3,7 @@
 
 /*!
 * @details
-* Для выполнения одной из операций установления соединения используется API OpenSSL [SSL_connect](https://www.openssl.org/docs/man3.0/man3/SSL_connect.html).
+* Р”Р»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРґРЅРѕР№ РёР· РѕРїРµСЂР°С†РёР№ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЃРѕРµРґРёРЅРµРЅРёСЏ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [SSL_connect](https://www.openssl.org/docs/man3.0/man3/SSL_connect.html).
 */
 bool secure_proxy::Client::PerformHandshake() {
 	auto handshake_code{ 0 };
@@ -19,11 +19,11 @@ bool secure_proxy::Client::PerformHandshake() {
 
 /*!
 * @details
-* Конфигурация состоит из установки работы SSL в режиме клиента и связывание SSL с BIO.  
-* Используемый API OpenSSL:
-* * [SSL_new](https://www.openssl.org/docs/man3.0/man3/SSL_new.html) создает SSL.
-* * [SSL_set_connect_state](https://www.openssl.org/docs/man3.0/man3/SSL_set_connect_state.html) устанавливает режим работы.
-* * [SSL_set_bio](https://www.openssl.org/docs/man3.0/man3/SSL_set_bio.html) связывает входной и выходной BIO с SSL.
+* РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ СЃРѕСЃС‚РѕРёС‚ РёР· СѓСЃС‚Р°РЅРѕРІРєРё СЂР°Р±РѕС‚С‹ SSL РІ СЂРµР¶РёРјРµ РєР»РёРµРЅС‚Р° Рё СЃРІСЏР·С‹РІР°РЅРёРµ SSL СЃ BIO.  
+* РСЃРїРѕР»СЊР·СѓРµРјС‹Р№ API OpenSSL:
+* * [SSL_new](https://www.openssl.org/docs/man3.0/man3/SSL_new.html) СЃРѕР·РґР°РµС‚ SSL.
+* * [SSL_set_connect_state](https://www.openssl.org/docs/man3.0/man3/SSL_set_connect_state.html) СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СЂРµР¶РёРј СЂР°Р±РѕС‚С‹.
+* * [SSL_set_bio](https://www.openssl.org/docs/man3.0/man3/SSL_set_bio.html) СЃРІСЏР·С‹РІР°РµС‚ РІС…РѕРґРЅРѕР№ Рё РІС‹С…РѕРґРЅРѕР№ BIO СЃ SSL.
 */
 bool secure_proxy::Client::CreateSSL() {
 	SSL_CTX* ctx = share::ClientCTXMaker::Get();

@@ -4,7 +4,7 @@
 
 /*!
 * @details
-* Создание ключей выполняется с использование API OpenSSL [EVP_RSA_gen](https://www.openssl.org/docs/man3.0/man3/EVP_RSA_gen.html).
+* РЎРѕР·РґР°РЅРёРµ РєР»СЋС‡РµР№ РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ API OpenSSL [EVP_RSA_gen](https://www.openssl.org/docs/man3.0/man3/EVP_RSA_gen.html).
 */
 share::ServerKeysMaker::ServerKeysMaker(int key_size) {
 	pair_keys_ = EVP_RSA_gen(key_size);
@@ -20,7 +20,7 @@ EVP_PKEY* share::ServerKeysMaker::Get(int key_size) {
 
 /*!
 * @details
-* Предполагается, что сертификат и приватный ключ предварительно сгенерированы.
+* РџСЂРµРґРїРѕР»Р°РіР°РµС‚СЃСЏ, С‡С‚Рѕ СЃРµСЂС‚РёС„РёРєР°С‚ Рё РїСЂРёРІР°С‚РЅС‹Р№ РєР»СЋС‡ РїСЂРµРґРІР°СЂРёС‚РµР»СЊРЅРѕ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅС‹.
 */
 share::RootCA::RootCA() : certificate_(nullptr), issuer_name_(nullptr), private_key_(nullptr) {
 	namespace config = default_config::ca;
@@ -67,26 +67,26 @@ share::RootCA* share::RootCA::Get() {
 
 /*!
 * @details
-* Последовательность выполнения операции выпуска сертификата:
-* * Получение CSR (ServerCSRTemplateMaker::Get).
-* * Замена в CSR доменного имени.
-* * Извлечение из CSR публичного ключа сервера.
-* * Установка в сертификат SubjectName CSR.
-* * Установка в сертификат публичного ключа.
-* * Создание и установка серийного номера для сертификата.
-* * Установка срока действия сертификата.
-* * Установка альтернативного доменного имени в сертификат.
-* * Установка в сертификат IssuerName.
-* * Подписание сертификата.
-* Используемый API OpenSSL:
-* * [X509_REQ_get_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_subject_name.html) возвращает SubjectName.
-* * [X509_REQ_get_pubkey](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_pubkey.html) возращает публичный ключ.
-* * [X509_new](https://www.openssl.org/docs/man3.0/man3/X509_new.html) создает сертификат.
-* * [X509_get_serialNumber](https://www.openssl.org/docs/man3.0/man3/X509_get_serialNumber.html) возвращет серийный номер.
-* * [X509_set_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_set_subject_name.html) устанавливает SubjectName.
-* * [X509_set_issuer_name](https://www.openssl.org/docs/man3.0/man3/X509_set_issuer_name.html) устанавливает IssuerName.
-* * [X509_set_pubkey](https://www.openssl.org/docs/man3.0/man3/X509_set_pubkey.html) устанавливает публичный ключ.
-* * [X509_free](https://www.openssl.org/docs/man3.0/man3/X509_free.html) очищает память, выделенную для сертификата.
+* РџРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїРµСЂР°С†РёРё РІС‹РїСѓСЃРєР° СЃРµСЂС‚РёС„РёРєР°С‚Р°:
+* * РџРѕР»СѓС‡РµРЅРёРµ CSR (ServerCSRTemplateMaker::Get).
+* * Р—Р°РјРµРЅР° РІ CSR РґРѕРјРµРЅРЅРѕРіРѕ РёРјРµРЅРё.
+* * РР·РІР»РµС‡РµРЅРёРµ РёР· CSR РїСѓР±Р»РёС‡РЅРѕРіРѕ РєР»СЋС‡Р° СЃРµСЂРІРµСЂР°.
+* * РЈСЃС‚Р°РЅРѕРІРєР° РІ СЃРµСЂС‚РёС„РёРєР°С‚ SubjectName CSR.
+* * РЈСЃС‚Р°РЅРѕРІРєР° РІ СЃРµСЂС‚РёС„РёРєР°С‚ РїСѓР±Р»РёС‡РЅРѕРіРѕ РєР»СЋС‡Р°.
+* * РЎРѕР·РґР°РЅРёРµ Рё СѓСЃС‚Р°РЅРѕРІРєР° СЃРµСЂРёР№РЅРѕРіРѕ РЅРѕРјРµСЂР° РґР»СЏ СЃРµСЂС‚РёС„РёРєР°С‚Р°.
+* * РЈСЃС‚Р°РЅРѕРІРєР° СЃСЂРѕРєР° РґРµР№СЃС‚РІРёСЏ СЃРµСЂС‚РёС„РёРєР°С‚Р°.
+* * РЈСЃС‚Р°РЅРѕРІРєР° Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅРѕРіРѕ РґРѕРјРµРЅРЅРѕРіРѕ РёРјРµРЅРё РІ СЃРµСЂС‚РёС„РёРєР°С‚.
+* * РЈСЃС‚Р°РЅРѕРІРєР° РІ СЃРµСЂС‚РёС„РёРєР°С‚ IssuerName.
+* * РџРѕРґРїРёСЃР°РЅРёРµ СЃРµСЂС‚РёС„РёРєР°С‚Р°.
+* РСЃРїРѕР»СЊР·СѓРµРјС‹Р№ API OpenSSL:
+* * [X509_REQ_get_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_subject_name.html) РІРѕР·РІСЂР°С‰Р°РµС‚ SubjectName.
+* * [X509_REQ_get_pubkey](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_pubkey.html) РІРѕР·СЂР°С‰Р°РµС‚ РїСѓР±Р»РёС‡РЅС‹Р№ РєР»СЋС‡.
+* * [X509_new](https://www.openssl.org/docs/man3.0/man3/X509_new.html) СЃРѕР·РґР°РµС‚ СЃРµСЂС‚РёС„РёРєР°С‚.
+* * [X509_get_serialNumber](https://www.openssl.org/docs/man3.0/man3/X509_get_serialNumber.html) РІРѕР·РІСЂР°С‰РµС‚ СЃРµСЂРёР№РЅС‹Р№ РЅРѕРјРµСЂ.
+* * [X509_set_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_set_subject_name.html) СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ SubjectName.
+* * [X509_set_issuer_name](https://www.openssl.org/docs/man3.0/man3/X509_set_issuer_name.html) СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ IssuerName.
+* * [X509_set_pubkey](https://www.openssl.org/docs/man3.0/man3/X509_set_pubkey.html) СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РїСѓР±Р»РёС‡РЅС‹Р№ РєР»СЋС‡.
+* * [X509_free](https://www.openssl.org/docs/man3.0/man3/X509_free.html) РѕС‡РёС‰Р°РµС‚ РїР°РјСЏС‚СЊ, РІС‹РґРµР»РµРЅРЅСѓСЋ РґР»СЏ СЃРµСЂС‚РёС„РёРєР°С‚Р°.
 */
 X509* share::RootCA::IssueCertificate(const std::string& domain) {
 	X509* certificate{ nullptr };
@@ -119,7 +119,7 @@ X509* share::RootCA::IssueCertificate(const std::string& domain) {
 
 /*!
 * @details
-* Для создания серийного номера используется API OpenSSL [RAND_bytes](https://www.openssl.org/docs/man3.0/man3/RAND_bytes.html).
+* Р”Р»СЏ СЃРѕР·РґР°РЅРёСЏ СЃРµСЂРёР№РЅРѕРіРѕ РЅРѕРјРµСЂР° РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [RAND_bytes](https://www.openssl.org/docs/man3.0/man3/RAND_bytes.html).
 */
 unsigned char* share::RootCA::GenerateSerialNumber() {
 	unsigned char* serial_number{ nullptr };
@@ -147,13 +147,13 @@ unsigned char* share::RootCA::GenerateSerialNumber() {
 
 /*!
 * @details
-* Используемый API OpenSSL:
-* * [X509_REQ_get_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_subject_name.html) возвращает SubjectName.
-* * [X509_NAME_entry_count](https://www.openssl.org/docs/man3.0/man3/X509_NAME_entry_count.html) возвращает количество полей в SubjectName.
-* * [X509_NAME_delete_entry](https://www.openssl.org/docs/man3.0/man3/X509_NAME_delete_entry.html) Удаляет запись в SubjectName по индексу.
-* * [X509_NAME_add_entry_by_txt](https://www.openssl.org/docs/man3.0/man3/X509_NAME_add_entry_by_txt.html) Добавляет поле в SubjectName.
-* Замена в CSR имени сервера выполняется путем удаления записи CN и добавления новой. Удаление возможно выполнить только по индексу.  
-* Предполагается, что запись CN всегда имеет крайний индекс.
+* РСЃРїРѕР»СЊР·СѓРµРјС‹Р№ API OpenSSL:
+* * [X509_REQ_get_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_subject_name.html) РІРѕР·РІСЂР°С‰Р°РµС‚ SubjectName.
+* * [X509_NAME_entry_count](https://www.openssl.org/docs/man3.0/man3/X509_NAME_entry_count.html) РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РїРѕР»РµР№ РІ SubjectName.
+* * [X509_NAME_delete_entry](https://www.openssl.org/docs/man3.0/man3/X509_NAME_delete_entry.html) РЈРґР°Р»СЏРµС‚ Р·Р°РїРёСЃСЊ РІ SubjectName РїРѕ РёРЅРґРµРєСЃСѓ.
+* * [X509_NAME_add_entry_by_txt](https://www.openssl.org/docs/man3.0/man3/X509_NAME_add_entry_by_txt.html) Р”РѕР±Р°РІР»СЏРµС‚ РїРѕР»Рµ РІ SubjectName.
+* Р—Р°РјРµРЅР° РІ CSR РёРјРµРЅРё СЃРµСЂРІРµСЂР° РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ РїСѓС‚РµРј СѓРґР°Р»РµРЅРёСЏ Р·Р°РїРёСЃРё CN Рё РґРѕР±Р°РІР»РµРЅРёСЏ РЅРѕРІРѕР№. РЈРґР°Р»РµРЅРёРµ РІРѕР·РјРѕР¶РЅРѕ РІС‹РїРѕР»РЅРёС‚СЊ С‚РѕР»СЊРєРѕ РїРѕ РёРЅРґРµРєСЃСѓ.  
+* РџСЂРµРґРїРѕР»Р°РіР°РµС‚СЃСЏ, С‡С‚Рѕ Р·Р°РїРёСЃСЊ CN РІСЃРµРіРґР° РёРјРµРµС‚ РєСЂР°Р№РЅРёР№ РёРЅРґРµРєСЃ.
 */
 bool share::RootCA::ReplaceCSRDomainName(X509_REQ* csr, const std::string& domain) {
 
@@ -180,7 +180,7 @@ bool share::RootCA::ReplaceCSRDomainName(X509_REQ* csr, const std::string& domai
 
 /*!
 * @details
-* Для добавления серийного номера используется API OpenSSL [ASN1_STRING_set](https://www.openssl.org/docs/man3.0/man3/ASN1_STRING_set.html).
+* Р”Р»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ СЃРµСЂРёР№РЅРѕРіРѕ РЅРѕРјРµСЂР° РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [ASN1_STRING_set](https://www.openssl.org/docs/man3.0/man3/ASN1_STRING_set.html).
 */
 bool share::RootCA::SetSerialNumber(ASN1_STRING* property_sn, unsigned char* value, int size) {
 	auto status = ASN1_STRING_set(property_sn, value, size);
@@ -193,9 +193,9 @@ bool share::RootCA::SetSerialNumber(ASN1_STRING* property_sn, unsigned char* val
 
 /*!
 * @details
-* Срок действия сертификата устанавливается равным 1 году.
-* Используемый API OpenSSL:
-* * [X509_gmtime_adj](https://www.openssl.org/docs/man3.0/man3/X509_gmtime_adj.html) устанавливате время.
+* РЎСЂРѕРє РґРµР№СЃС‚РІРёСЏ СЃРµСЂС‚РёС„РёРєР°С‚Р° СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚СЃСЏ СЂР°РІРЅС‹Рј 1 РіРѕРґСѓ.
+* РСЃРїРѕР»СЊР·СѓРµРјС‹Р№ API OpenSSL:
+* * [X509_gmtime_adj](https://www.openssl.org/docs/man3.0/man3/X509_gmtime_adj.html) СѓСЃС‚Р°РЅР°РІР»РёРІР°С‚Рµ РІСЂРµРјСЏ.
 */
 bool share::RootCA::SetExpirationDate(X509* certificate) {
 	auto kSecsYear{ 31536000 };
@@ -209,8 +209,8 @@ bool share::RootCA::SetExpirationDate(X509* certificate) {
 
 /*!
 * @details
-* Необходимость установки альтернативного имени обусловлена требованием некоторых  
-* клиентов к сертификатам.
+* РќРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ СѓСЃС‚Р°РЅРѕРІРєРё Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅРѕРіРѕ РёРјРµРЅРё РѕР±СѓСЃР»РѕРІР»РµРЅР° С‚СЂРµР±РѕРІР°РЅРёРµРј РЅРµРєРѕС‚РѕСЂС‹С…  
+* РєР»РёРµРЅС‚РѕРІ Рє СЃРµСЂС‚РёС„РёРєР°С‚Р°Рј.
 */
 bool share::RootCA::SetSubjectAltName(X509* certificate, const std::string& domain) {
 
@@ -231,7 +231,7 @@ bool share::RootCA::SetSubjectAltName(X509* certificate, const std::string& doma
 
 /*!
 * @details
-* Операция выполняется с использование API OpenSSL [X509_sign](https://www.openssl.org/docs/man3.0/man3/X509_sign.html).
+* РћРїРµСЂР°С†РёСЏ РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ API OpenSSL [X509_sign](https://www.openssl.org/docs/man3.0/man3/X509_sign.html).
 */
 bool share::RootCA::Sign(X509* certificate) {
 	auto kSizeError{ 0 };
@@ -247,9 +247,9 @@ bool share::RootCA::Sign(X509* certificate) {
 
 /*!
 * @details
-* Создание запроса выполняется с использованием API OpenSSL [X509_REQ_new](https://www.openssl.org/docs/man3.0/man3/X509_REQ_new.html).
-* Конфигурирование запроса включает установку полей SubjectName(C, ST, L, O, CN),  
-* установку версии, установку публичного ключа. Для установки версии используется  
+* РЎРѕР·РґР°РЅРёРµ Р·Р°РїСЂРѕСЃР° РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј API OpenSSL [X509_REQ_new](https://www.openssl.org/docs/man3.0/man3/X509_REQ_new.html).
+* РљРѕРЅС„РёРіСѓСЂРёСЂРѕРІР°РЅРёРµ Р·Р°РїСЂРѕСЃР° РІРєР»СЋС‡Р°РµС‚ СѓСЃС‚Р°РЅРѕРІРєСѓ РїРѕР»РµР№ SubjectName(C, ST, L, O, CN),  
+* СѓСЃС‚Р°РЅРѕРІРєСѓ РІРµСЂСЃРёРё, СѓСЃС‚Р°РЅРѕРІРєСѓ РїСѓР±Р»РёС‡РЅРѕРіРѕ РєР»СЋС‡Р°. Р”Р»СЏ СѓСЃС‚Р°РЅРѕРІРєРё РІРµСЂСЃРёРё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ  
 * API OpenSSL [X509_REQ_set_version](https://www.openssl.org/docs/man3.0/man3/X509_REQ_set_version.html).
 */
 share::ServerCSRTemplateMaker::ServerCSRTemplateMaker() {
@@ -276,7 +276,7 @@ share::ServerCSRTemplateMaker::ServerCSRTemplateMaker() {
 
 /*!
 * @details
-* Для извлечения объекта SubjectName используется API OpenSSL [X509_REQ_get_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_subject_name.html).
+* Р”Р»СЏ РёР·РІР»РµС‡РµРЅРёСЏ РѕР±СЉРµРєС‚Р° SubjectName РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [X509_REQ_get_subject_name](https://www.openssl.org/docs/man3.0/man3/X509_REQ_get_subject_name.html).
 */
 bool share::ServerCSRTemplateMaker::FillSubjectNameFields() {
 	
@@ -300,7 +300,7 @@ bool share::ServerCSRTemplateMaker::FillSubjectNameFields() {
 
 /*!
 * @details
-* Для добавления поля используется API OpenSSL [X509_NAME_add_entry_by_txt](https://www.openssl.org/docs/man3.0/man3/X509_NAME_add_entry_by_txt.html).
+* Р”Р»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РїРѕР»СЏ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [X509_NAME_add_entry_by_txt](https://www.openssl.org/docs/man3.0/man3/X509_NAME_add_entry_by_txt.html).
 */
 bool share::ServerCSRTemplateMaker::AddTxtEntryToSubjectName(X509_NAME* subject_name, const std::string& field_name, 
 	const std::string& field_value) {
@@ -310,7 +310,7 @@ bool share::ServerCSRTemplateMaker::AddTxtEntryToSubjectName(X509_NAME* subject_
 
 /*!
 * @details
-* Для установки публичного ключа используется API OpenSSL [X509_REQ_set_pubkey](https://www.openssl.org/docs/man3.0/man3/X509_REQ_set_pubkey.html).
+* Р”Р»СЏ СѓСЃС‚Р°РЅРѕРІРєРё РїСѓР±Р»РёС‡РЅРѕРіРѕ РєР»СЋС‡Р° РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [X509_REQ_set_pubkey](https://www.openssl.org/docs/man3.0/man3/X509_REQ_set_pubkey.html).
 */
 bool share::ServerCSRTemplateMaker::SetPublicKey() {
 	EVP_PKEY* server_keys = ServerKeysMaker::Get(default_config::server::kKeySize);
@@ -329,11 +329,11 @@ X509_REQ* share::ServerCSRTemplateMaker::Get() {
 
 /*!
 * @details
-* Для выполнения операций используется API OpenSSL:
-* * [SSL_CTX_new](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_new.html) для создания контекста.
-* * [SSL_CTX_set_options](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_options.html) для добавления параметров соединения.
-* * [SSL_CTX_set_client_hello_cb](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_client_hello_cb.html) для установки функции обработки ClientHello.
-* * [SSL_CTX_set_verify](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_verify.html) для установки флагов проверки.
+* Р”Р»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїРµСЂР°С†РёР№ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL:
+* * [SSL_CTX_new](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_new.html) РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РєРѕРЅС‚РµРєСЃС‚Р°.
+* * [SSL_CTX_set_options](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_options.html) РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ СЃРѕРµРґРёРЅРµРЅРёСЏ.
+* * [SSL_CTX_set_client_hello_cb](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_client_hello_cb.html) РґР»СЏ СѓСЃС‚Р°РЅРѕРІРєРё С„СѓРЅРєС†РёРё РѕР±СЂР°Р±РѕС‚РєРё ClientHello.
+* * [SSL_CTX_set_verify](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_verify.html) РґР»СЏ СѓСЃС‚Р°РЅРѕРІРєРё С„Р»Р°РіРѕРІ РїСЂРѕРІРµСЂРєРё.
 */
 share::ServerCTXMaker::ServerCTXMaker(): ctx_(nullptr) {
 	ctx_ = SSL_CTX_new(TLS_server_method());
@@ -359,11 +359,11 @@ SSL_CTX* share::ServerCTXMaker::Get() {
 
 /*!
 * @details
-* Для выполнения операций используется API OpenSSL:
-* * [SSL_CTX_new](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_new.html) для создания контекста.
-* * [SSL_CTX_set_options](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_options.html) для добавления параметров соединения.
-* * [SSL_CTX_set_verify](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_verify.html) для установки флагов проверки.
-* * [SSL_CTX_load_verify_locations](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_load_verify_locations.html) для загрузки доверенных сертификатов.
+* Р”Р»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїРµСЂР°С†РёР№ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL:
+* * [SSL_CTX_new](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_new.html) РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РєРѕРЅС‚РµРєСЃС‚Р°.
+* * [SSL_CTX_set_options](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_options.html) РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ СЃРѕРµРґРёРЅРµРЅРёСЏ.
+* * [SSL_CTX_set_verify](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_set_verify.html) РґР»СЏ СѓСЃС‚Р°РЅРѕРІРєРё С„Р»Р°РіРѕРІ РїСЂРѕРІРµСЂРєРё.
+* * [SSL_CTX_load_verify_locations](https://www.openssl.org/docs/man3.0/man3/SSL_CTX_load_verify_locations.html) РґР»СЏ Р·Р°РіСЂСѓР·РєРё РґРѕРІРµСЂРµРЅРЅС‹С… СЃРµСЂС‚РёС„РёРєР°С‚РѕРІ.
 */
 share::ClientCTXMaker::ClientCTXMaker() {
 	auto status_load_locations{ 0 };
@@ -391,12 +391,12 @@ SSL_CTX* share::ClientCTXMaker::Get() {
 
 /*!
 * @details
-* Функция вызывается автоматически движком OpenSSL при обнаружении сообщения ClientHello.  
-* В процессе обработки, из сообщения извлекается расширение SNI. Если расширение отсутствует  
-* работа функции прерывается с кодом ошибки. При получении значения SNI, выполняется запрос
-* на создание сертификата. Полученный сертификат устанавливается в параметры SSL-соединения, т.е.
-* полученный сертификат вернется клиенту. Если на каком-либо этапе произойдет критическая ошибка,
-* работа функции прервется с кодом ошибки.
+* Р¤СѓРЅРєС†РёСЏ РІС‹Р·С‹РІР°РµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РґРІРёР¶РєРѕРј OpenSSL РїСЂРё РѕР±РЅР°СЂСѓР¶РµРЅРёРё СЃРѕРѕР±С‰РµРЅРёСЏ ClientHello.  
+* Р’ РїСЂРѕС†РµСЃСЃРµ РѕР±СЂР°Р±РѕС‚РєРё, РёР· СЃРѕРѕР±С‰РµРЅРёСЏ РёР·РІР»РµРєР°РµС‚СЃСЏ СЂР°СЃС€РёСЂРµРЅРёРµ SNI. Р•СЃР»Рё СЂР°СЃС€РёСЂРµРЅРёРµ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚  
+* СЂР°Р±РѕС‚Р° С„СѓРЅРєС†РёРё РїСЂРµСЂС‹РІР°РµС‚СЃСЏ СЃ РєРѕРґРѕРј РѕС€РёР±РєРё. РџСЂРё РїРѕР»СѓС‡РµРЅРёРё Р·РЅР°С‡РµРЅРёСЏ SNI, РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ Р·Р°РїСЂРѕСЃ
+* РЅР° СЃРѕР·РґР°РЅРёРµ СЃРµСЂС‚РёС„РёРєР°С‚Р°. РџРѕР»СѓС‡РµРЅРЅС‹Р№ СЃРµСЂС‚РёС„РёРєР°С‚ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚СЃСЏ РІ РїР°СЂР°РјРµС‚СЂС‹ SSL-СЃРѕРµРґРёРЅРµРЅРёСЏ, С‚.Рµ.
+* РїРѕР»СѓС‡РµРЅРЅС‹Р№ СЃРµСЂС‚РёС„РёРєР°С‚ РІРµСЂРЅРµС‚СЃСЏ РєР»РёРµРЅС‚Сѓ. Р•СЃР»Рё РЅР° РєР°РєРѕРј-Р»РёР±Рѕ СЌС‚Р°РїРµ РїСЂРѕРёР·РѕР№РґРµС‚ РєСЂРёС‚РёС‡РµСЃРєР°СЏ РѕС€РёР±РєР°,
+* СЂР°Р±РѕС‚Р° С„СѓРЅРєС†РёРё РїСЂРµСЂРІРµС‚СЃСЏ СЃ РєРѕРґРѕРј РѕС€РёР±РєРё.
 */
 int share::server_tools::ProcessClientHello(SSL* ssl, int* al, void* arg) {
 
@@ -427,7 +427,7 @@ int share::server_tools::ProcessClientHello(SSL* ssl, int* al, void* arg) {
 
 /*!
 * @details
-* Для выполнения операции используется API OpenSSL [SSL_client_hello_get0_ext](https://www.openssl.org/docs/man3.0/man3/SSL_client_hello_get0_ext.html).
+* Р”Р»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїРµСЂР°С†РёРё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [SSL_client_hello_get0_ext](https://www.openssl.org/docs/man3.0/man3/SSL_client_hello_get0_ext.html).
 */
 bool share::server_tools::IsExistsSNI(SSL* ssl, const unsigned char** ext, size_t* ext_len) {
 	auto is_exists{ 0 };
@@ -442,7 +442,7 @@ bool share::server_tools::IsExistsSNI(SSL* ssl, const unsigned char** ext, size_
 
 /*!
 * @details
-* Формат расширения:  
+* Р¤РѕСЂРјР°С‚ СЂР°СЃС€РёСЂРµРЅРёСЏ:  
 * | len | len | type | len | len | value |
 */
 bool share::server_tools::CheckLenExtension(const unsigned char*& ext, size_t* ext_len) {
@@ -460,7 +460,7 @@ bool share::server_tools::CheckLenExtension(const unsigned char*& ext, size_t* e
 }
 
 /*!
-* Согласно RFC 3546, код типа расширения SNI 0 (TLSEXT_NAMETYPE_host_name)
+* РЎРѕРіР»Р°СЃРЅРѕ RFC 3546, РєРѕРґ С‚РёРїР° СЂР°СЃС€РёСЂРµРЅРёСЏ SNI 0 (TLSEXT_NAMETYPE_host_name)
 */
 bool share::server_tools::CheckTypeExtensionSNI(const unsigned char*& extension) {
 	if (*extension++ != TLSEXT_NAMETYPE_host_name) { return false; }
@@ -469,7 +469,7 @@ bool share::server_tools::CheckTypeExtensionSNI(const unsigned char*& extension)
 
 /*!
 * @details
-* Размер имени сервера занимает 2 байта после типа расширения
+* Р Р°Р·РјРµСЂ РёРјРµРЅРё СЃРµСЂРІРµСЂР° Р·Р°РЅРёРјР°РµС‚ 2 Р±Р°Р№С‚Р° РїРѕСЃР»Рµ С‚РёРїР° СЂР°СЃС€РёСЂРµРЅРёСЏ
 */
 int share::server_tools::GetLenExtensionValue(const unsigned char*& extension) {
 	unsigned int len{ 0 };
@@ -508,9 +508,9 @@ std::string share::server_tools::GetSNI(const unsigned char*& ext) {
 
 /*!
 * @details
-* Создаваемые компоненты:  
-* * Канал BIO (input->output)
-* * Объект SSL, описывающий параметры сессии.
+* РЎРѕР·РґР°РІР°РµРјС‹Рµ РєРѕРјРїРѕРЅРµРЅС‚С‹:  
+* * РљР°РЅР°Р» BIO (input->output)
+* * РћР±СЉРµРєС‚ SSL, РѕРїРёСЃС‹РІР°СЋС‰РёР№ РїР°СЂР°РјРµС‚СЂС‹ СЃРµСЃСЃРёРё.
 */
 bool share::Endpoint::Load() {
 	if (!CreateBIO()) { return false; }
@@ -520,11 +520,11 @@ bool share::Endpoint::Load() {
 }
 
 /*!
-* Для каждого соединения создается 2 объекта BIO (источник/приемник).  
-* Конфигурирование заключается в установлении неблокирующего режима работы.  
-* Создание BIO выполняется с использованием API OpenSSL:
-* * [BIO_new](https://www.openssl.org/docs/man3.0/man3/BIO_new.html) для создания объекта BIO.
-* * [BIO_s_mem](https://www.openssl.org/docs/man3.0/man3/BIO_s_mem.html) для использовании памяти для ввода/вывода.
+* Р”Р»СЏ РєР°Р¶РґРѕРіРѕ СЃРѕРµРґРёРЅРµРЅРёСЏ СЃРѕР·РґР°РµС‚СЃСЏ 2 РѕР±СЉРµРєС‚Р° BIO (РёСЃС‚РѕС‡РЅРёРє/РїСЂРёРµРјРЅРёРє).  
+* РљРѕРЅС„РёРіСѓСЂРёСЂРѕРІР°РЅРёРµ Р·Р°РєР»СЋС‡Р°РµС‚СЃСЏ РІ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёРё РЅРµР±Р»РѕРєРёСЂСѓСЋС‰РµРіРѕ СЂРµР¶РёРјР° СЂР°Р±РѕС‚С‹.  
+* РЎРѕР·РґР°РЅРёРµ BIO РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј API OpenSSL:
+* * [BIO_new](https://www.openssl.org/docs/man3.0/man3/BIO_new.html) РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РѕР±СЉРµРєС‚Р° BIO.
+* * [BIO_s_mem](https://www.openssl.org/docs/man3.0/man3/BIO_s_mem.html) РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё РїР°РјСЏС‚Рё РґР»СЏ РІРІРѕРґР°/РІС‹РІРѕРґР°.
 */
 bool share::Endpoint::CreateBIO() {
 	auto kBIOModeNonBlocking{ 1 };
@@ -542,7 +542,7 @@ bool share::Endpoint::CreateBIO() {
 
 /*
 * @details
-* Для очистки памяти используется API OpenSSL [BIO_free](https://www.openssl.org/docs/man3.0/man3/BIO_free.html).
+* Р”Р»СЏ РѕС‡РёСЃС‚РєРё РїР°РјСЏС‚Рё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [BIO_free](https://www.openssl.org/docs/man3.0/man3/BIO_free.html).
 */
 void share::Endpoint::ResetBIO() {
 	BIO_free(input_);
@@ -551,8 +551,8 @@ void share::Endpoint::ResetBIO() {
 
 /*!
 * @details
-* Для очистки памяти используется API OpenSSL [SSL_free](https://www.openssl.org/docs/man3.0/man3/SSL_free.html).  
-* SSL_free очищает в том числе все связанные с SSL объекты.
+* Р”Р»СЏ РѕС‡РёСЃС‚РєРё РїР°РјСЏС‚Рё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL [SSL_free](https://www.openssl.org/docs/man3.0/man3/SSL_free.html).  
+* SSL_free РѕС‡РёС‰Р°РµС‚ РІ С‚РѕРј С‡РёСЃР»Рµ РІСЃРµ СЃРІСЏР·Р°РЅРЅС‹Рµ СЃ SSL РѕР±СЉРµРєС‚С‹.
 */
 void share::Endpoint::ResetSSL() {
 	if (ssl_) { SSL_free(ssl_); }
@@ -560,7 +560,7 @@ void share::Endpoint::ResetSSL() {
 
 /*!
 * @details
-* Проверка выполняется с использованием API OpenSSL    
+* РџСЂРѕРІРµСЂРєР° РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј API OpenSSL    
 * [SSL_in_before](https://www.openssl.org/docs/man3.0/man3/SSL_in_before.html)
 */
 bool share::Endpoint::IsHandshakeInit() {
@@ -569,9 +569,9 @@ bool share::Endpoint::IsHandshakeInit() {
 
 /*
 * @details
-* Если from_bio==true, будет проверен выходной BIO на наличие данных.
-* Если from_bio==false, состояние будет изменено с учетом значения value.  
-* Под состоянием понимается маркер has_data_. Проверка BIO выполняется с использованием  
+* Р•СЃР»Рё from_bio==true, Р±СѓРґРµС‚ РїСЂРѕРІРµСЂРµРЅ РІС‹С…РѕРґРЅРѕР№ BIO РЅР° РЅР°Р»РёС‡РёРµ РґР°РЅРЅС‹С….
+* Р•СЃР»Рё from_bio==false, СЃРѕСЃС‚РѕСЏРЅРёРµ Р±СѓРґРµС‚ РёР·РјРµРЅРµРЅРѕ СЃ СѓС‡РµС‚РѕРј Р·РЅР°С‡РµРЅРёСЏ value.  
+* РџРѕРґ СЃРѕСЃС‚РѕСЏРЅРёРµРј РїРѕРЅРёРјР°РµС‚СЃСЏ РјР°СЂРєРµСЂ has_data_. РџСЂРѕРІРµСЂРєР° BIO РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј  
 * API OpenSSL [BIO_pending](https://www.openssl.org/docs/man3.0/man3/BIO_pending.html).
 */
 void share::Endpoint::SetIsDataFlag(bool from_bio, bool value) {
@@ -586,7 +586,7 @@ void share::Endpoint::SetIsDataFlag(bool from_bio, bool value) {
 
 /*!
 * @details
-* Добавление данных в BIO выполняется с использованием API OpenSSL  
+* Р”РѕР±Р°РІР»РµРЅРёРµ РґР°РЅРЅС‹С… РІ BIO РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј API OpenSSL  
 * [BIO_write](https://www.openssl.org/docs/man3.0/man3/BIO_write.html)
 */
 bool share::Endpoint::SendToBIOChannel(unsigned char* data, int data_len) {
@@ -600,7 +600,7 @@ bool share::Endpoint::SendToBIOChannel(unsigned char* data, int data_len) {
 
 /*!
 * @details
-* Операция выполняется с использованием API OpenSSL  
+* РћРїРµСЂР°С†РёСЏ РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј API OpenSSL  
 * [SSL_get_error](https://www.openssl.org/docs/man3.0/man3/SSL_get_error.html)
 */
 share::ssl_status::code share::Endpoint::GetSSLStatus(int resolve_code) {
@@ -619,10 +619,10 @@ share::ssl_status::code share::Endpoint::GetSSLStatus(int resolve_code) {
 
 /*!
 * @details
-* Читает данные из BIO в буфер, который передает пользователь. Количество прочитанных байт записывается в параметр,  
-* переданный пользователем по ссылке. Ответственность за выделение и освобождение памяти для буфера возлагается на пользователя.  
-* Если размер переданного буфера меньше размера данных, которые необходимо прочитать, в буфер будет записано количество байт,  
-* равное его размеру и возвращен код READ_STATUS_LEFT_DATA. Для выполнения операции чтения используется API OpenSSL  
+* Р§РёС‚Р°РµС‚ РґР°РЅРЅС‹Рµ РёР· BIO РІ Р±СѓС„РµСЂ, РєРѕС‚РѕСЂС‹Р№ РїРµСЂРµРґР°РµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ. РљРѕР»РёС‡РµСЃС‚РІРѕ РїСЂРѕС‡РёС‚Р°РЅРЅС‹С… Р±Р°Р№С‚ Р·Р°РїРёСЃС‹РІР°РµС‚СЃСЏ РІ РїР°СЂР°РјРµС‚СЂ,  
+* РїРµСЂРµРґР°РЅРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј РїРѕ СЃСЃС‹Р»РєРµ. РћС‚РІРµС‚СЃС‚РІРµРЅРЅРѕСЃС‚СЊ Р·Р° РІС‹РґРµР»РµРЅРёРµ Рё РѕСЃРІРѕР±РѕР¶РґРµРЅРёРµ РїР°РјСЏС‚Рё РґР»СЏ Р±СѓС„РµСЂР° РІРѕР·Р»Р°РіР°РµС‚СЃСЏ РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.  
+* Р•СЃР»Рё СЂР°Р·РјРµСЂ РїРµСЂРµРґР°РЅРЅРѕРіРѕ Р±СѓС„РµСЂР° РјРµРЅСЊС€Рµ СЂР°Р·РјРµСЂР° РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРѕС‡РёС‚Р°С‚СЊ, РІ Р±СѓС„РµСЂ Р±СѓРґРµС‚ Р·Р°РїРёСЃР°РЅРѕ РєРѕР»РёС‡РµСЃС‚РІРѕ Р±Р°Р№С‚,  
+* СЂР°РІРЅРѕРµ РµРіРѕ СЂР°Р·РјРµСЂСѓ Рё РІРѕР·РІСЂР°С‰РµРЅ РєРѕРґ READ_STATUS_LEFT_DATA. Р”Р»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїРµСЂР°С†РёРё С‡С‚РµРЅРёСЏ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ API OpenSSL  
 * [BIO_read](https://www.openssl.org/docs/man3.0/man3/BIO_read.html).
 */
 enum share::ssl_status::read share::Endpoint::ReadData(unsigned char* buf, int buf_size, int& readed) {
@@ -645,7 +645,7 @@ enum share::ssl_status::read share::Endpoint::ReadData(unsigned char* buf, int b
 
 /*!
 * @details
-* Операция выполняется с использованием API OpenSSL  
+* РћРїРµСЂР°С†РёСЏ РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј API OpenSSL  
 * [SSL_is_init_finished](https://www.openssl.org/docs/man3.0/man3/SSL_is_init_finished.html)
 */
 bool share::Endpoint::IsTLSConnectionEstablished() {
@@ -654,10 +654,10 @@ bool share::Endpoint::IsTLSConnectionEstablished() {
 
 /*!
 * @details
-* Маркером наличия данных является атрибут has_data_. После выполнения любой операции с данными  
-* проверяется наличие результата обработки в выходном базовом потоке BIO. Если данные для чтения  
-* есть, has_data_ устанавливается в true. Если данных нет, в false. При считывании данных из  
-* выходного BIO, маркер has_data_ устанавливается в false.
+* РњР°СЂРєРµСЂРѕРј РЅР°Р»РёС‡РёСЏ РґР°РЅРЅС‹С… СЏРІР»СЏРµС‚СЃСЏ Р°С‚СЂРёР±СѓС‚ has_data_. РџРѕСЃР»Рµ РІС‹РїРѕР»РЅРµРЅРёСЏ Р»СЋР±РѕР№ РѕРїРµСЂР°С†РёРё СЃ РґР°РЅРЅС‹РјРё  
+* РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ РЅР°Р»РёС‡РёРµ СЂРµР·СѓР»СЊС‚Р°С‚Р° РѕР±СЂР°Р±РѕС‚РєРё РІ РІС‹С…РѕРґРЅРѕРј Р±Р°Р·РѕРІРѕРј РїРѕС‚РѕРєРµ BIO. Р•СЃР»Рё РґР°РЅРЅС‹Рµ РґР»СЏ С‡С‚РµРЅРёСЏ  
+* РµСЃС‚СЊ, has_data_ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚СЃСЏ РІ true. Р•СЃР»Рё РґР°РЅРЅС‹С… РЅРµС‚, РІ false. РџСЂРё СЃС‡РёС‚С‹РІР°РЅРёРё РґР°РЅРЅС‹С… РёР·  
+* РІС‹С…РѕРґРЅРѕРіРѕ BIO, РјР°СЂРєРµСЂ has_data_ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚СЃСЏ РІ false.
 */
 bool share::Endpoint::HasReadData() {
 	return has_data_;
