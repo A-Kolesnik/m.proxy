@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ -n "$1" ]
+then
+echo "Updating repo ..."
+sudo apt update
+sudo apt upgrade
+fi
+
+sudo apt install openssl
+sudo apt install libssl-dev
