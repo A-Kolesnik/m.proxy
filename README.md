@@ -36,7 +36,7 @@ if (!proxy.Load()) {
 ```
 
 8. ќбработка сообщени€ от клиента LAN  
-```
+```C++
 
 auto status = proxy.ProcessLANClientMessage(buffer, buffer_size);
 
@@ -45,12 +45,12 @@ if(!status){
 }
 ```
 9. ќбработка сообщени€ от сервера WAN  
-```
+```C++
 auto status = proxy.ProcessWANServerMessage(buffer, buffer_size);
 ```
 10. ѕосле обработки порции данных клиента LAN / сервера WAN, необходимо выполнить  
 проверку наличи€ данных - ответа на сообщени€ от Proxy  
-```
+```C++
 if (proxy.client_.HasReadData()) {
 	auto status = proxy.client_.ReadData(write_buffer, write_buffer_size, readed);
 	//  оды возврата описаны в документации к методу
